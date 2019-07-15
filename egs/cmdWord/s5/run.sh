@@ -32,17 +32,16 @@ done
 #steps/train_mono.sh --nj $n --cmd "$train_cmd" --totgauss 400 data/train data/lang exp/mono0a
 steps/train_mono.sh --nj $n --cmd "$train_cmd" --boost-silence 3.25 data/train data/lang exp/mono0a
 
+#test monophone model
+local/decode.sh --mono true --nj $n "steps/decode.sh" exp/mono0a data
+
 #monophone_ali
 steps/align_si.sh --nj $n --cmd "$train_cmd" --boost-silence 3.25 data/train data/lang exp/mono0a exp/mono_ali || exit 1;
 
 #triphone
 steps/train_deltas.sh --cmd "$train_cmd" --boost-silence 3.25 2000 10000 data/train data/lang exp/mono0a exp/tri1 || exit 1;
 
-# decode word
-# Graph compilation
-utils/mkgraph.sh data/graph/lang exp/tri1 exp/tri1/graph_tgpr
+#test tri1 model
+local/decode.sh --nj $n "steps/decode.sh" exp/tri1 data
 
-# Decoding
-steps/decode.sh --nj $n --cmd "$decode_cmd" exp/tri1/graph_tgpr data/test exp/tri1/decode_test
-
-#for x in exp/*/decode*; do [ -d $x ] && grep WER $x/wer_* | utils/best_wer.sh; done
+for x in exp/*/decode*; do [ -d $x ] && grep WER $x/wer_* | utils/best_wer.sh; done
